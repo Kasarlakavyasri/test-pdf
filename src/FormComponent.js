@@ -7,7 +7,8 @@ const FormComponent = () => {
 
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post('https://testkasarla.netlify.app/api/form', data);
+        const response = await axios.post('/.netlify/functions/formSubmission', data);
+
       if (response.status === 200) {
         alert('Form submitted successfully!');
       }
