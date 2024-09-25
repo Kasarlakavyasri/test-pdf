@@ -1,40 +1,29 @@
-const PDFDocument = require('pdfkit');
+const { PDFDocument } = require('pdf-lib'); // Ensure you have this library installed
 const fs = require('fs');
-const path = require('path');
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
+exports.handler = async (event, context) => {
+  try {
+    const data = JSON.parse(event.body);
+    const { name, email, phone, message } = data;
+
+    // Create a PDF document (example with pdf-lib)
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage();
+    page.drawText(`Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`, { x: 50, y: 600 });
+
+    const pdfBytes = await pdfDoc.save();
+
+    // Save the PDF to a file or return it directly
+    // For this example, we are not saving the PDF, but you can implement saving logic
+
     return {
-      statusCode: 405,
-      body: JSON.stringify({ message: 'Method Not Allowed' }),
+      statusCode: 200,
+      body: JSON.stringify({ message: 'PDF generated successfully!' }),
+    };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Failed to generate PDF' }),
     };
   }
-
-  const { name, email, phone, message } = JSON.parse(event.body);
-
-  // Create a PDF document
-  const doc = new PDFDocument();
-  const filePath = path.join('/tmp', `${name.replace(/\s+/g, '_')}.pdf`);
-
-  // Pipe the PDF into a file
-  const writeStream = fs.createWriteStream(filePath);
-  doc.pipe(writeStream);
-
-  // Add content to the PDF
-  doc.fontSize(25).text('Form Submission Details', { align: 'center' });
-  doc.text(`Name: ${name}`);
-  doc.text(`Email: ${email}`);
-  doc.text(`Phone: ${phone}`);
-  doc.text(`Message: ${message}`);
-
-  // Finalize the PDF and end the stream
-  doc.end();
-
-  // Wait for the write stream to finish
-  await new Promise((resolve) => writeStream.on('finish', resolve));
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ message: 'Form submitted and PDF created!' }),
-  };
 };
